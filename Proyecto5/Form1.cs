@@ -9,11 +9,15 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MySql.Data.MySqlClient; //Libreria de conexion a SQL
 
 namespace Proyecto5
 {
     public partial class Form1 : Form
     {
+        //DAtos de conexion a MySQL (XAMPP)
+        string conexionSQL = "Server=localhost;Port=3306;Database=programacionavanzada;Uid=root;Pwd=";
+         
         public Form1()
         {
             InitializeComponent();
@@ -71,8 +75,17 @@ namespace Proyecto5
                         if (archivoExiste)
                         {
                             writer.WriteLine();
+                            writer.WriteLine(datos);
+                            InsertarRegistro(nombres, apellidos, int.Parse(edad), decimal.Parse(estatura), telefono, genero);
+                            MessageBox.Show("Datos ingresados correctamente.");
                         }
-                        writer.WriteLine(datos);
+                        else
+                        {
+                            writer.WriteLine(datos);
+                            InsertarRegistro(nombres, apellidos, int.Parse(edad), decimal.Parse(estatura), telefono, genero);
+                            MessageBox.Show("Datos ingresados correctamente.");
+                        }
+                        
                     }
                 }
                 //Mostrar mensajes
@@ -86,6 +99,30 @@ namespace Proyecto5
 
         }
 
+
+        private void InsertarRegistro(string nombres, string apellidos, int edad, decimal estatura, string telefono, string genero)
+        {
+            using (MySqlConnection conection =new MySqlConnection(conexionSQL))
+            {
+                conection.Open();
+                string insertQuery = "INSERT INTO resgistros (Nombres, Apellidos, Telefono, Edad, Estatura, Genero)" +
+                                       "VALUES (@Nombres, @Apellidos, @Telefono, @Edad, @Estatura, @Genero)"; 
+
+                using(MySqlCommand command= new MySqlCommand(insertQuery, conection))
+                {
+                    command.Parameters.AddWithValue("@Nombres", nombres);
+                    command.Parameters.AddWithValue("@Apellidos", apellidos);
+                    command.Parameters.AddWithValue("@Telefono", telefono);
+                    command.Parameters.AddWithValue("@Edad", edad);
+                    command.Parameters.AddWithValue("@Estatura", estatura);
+                    command.Parameters.AddWithValue("@Genero", genero);
+
+                    command.ExecuteNonQuery();
+                }
+                conection.Close();
+            }
+        }
+
         private bool EsEnteroValido(string valor)
         { 
             int resultado;
@@ -96,10 +133,19 @@ namespace Proyecto5
             decimal resultado;
             return decimal.TryParse(valor, out resultado);
         }
-        private bool EsEnteroValidoDe10Digitos(string valor)
+        private bool EsEnteroValidoDe10Digitos(string input)
         {
-            long resultado;
-            return long.TryParse(valor, out resultado) && valor.Length == 10;
+            if (input.Length != 10)
+            {
+                return false;
+            }
+            if (!input.All(char.IsDigit))
+            {
+                return false;
+            }
+            return true;
+            //long resultado;
+            //return long.TryParse(valor, out resultado) && valor.Length == 10;
         }
 
         private bool EsTextoValido(string valor)
@@ -131,18 +177,27 @@ namespace Proyecto5
         {
             TextBox textBox = (TextBox)sender;
             string input = textBox.Text;
-            if (input.Length>10)
+            if (input.Length < 10)
             {
-                if (!EsEnteroValidoDe10Digitos(input))
-                {
-                    MessageBox.Show("Por favor ingrese un numero de telefono valido de 10 digitos", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    textBox.Clear();
-                }
+                return;
             }
-            else if (!EsEnteroValidoDe10Digitos(input))
+            if (!EsEnteroValidoDe10Digitos(input))
             {
                 MessageBox.Show("Por favor ingrese un numero de telefono valido de 10 digitos", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                textBox.Clear();
             }
+            //if (input.Length>10)
+            //{
+            //    if (!EsEnteroValidoDe10Digitos(input))
+            //    {
+            //        MessageBox.Show("Por favor ingrese un numero de telefono valido de 10 digitos", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            //        textBox.Clear();
+            //    }
+            //}
+            //else if (!EsEnteroValidoDe10Digitos(input))
+            //{
+            //    MessageBox.Show("Por favor ingrese un numero de telefono valido de 10 digitos", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            //}
         }
         private void ValidarNombre(object sender, EventArgs e)
         {
